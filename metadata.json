@@ -1,0 +1,12 @@
+{
+  "name": "Ovuline",
+  "description": "Smart AI PCOD/PCOS Detection and Cycle Tracking System that traces the rhythm of your cycle.",
+  "requestFramePermissions": [
+    "microphone",
+    "serial",
+    "usb"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

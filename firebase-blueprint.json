@@ -1,0 +1,97 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User clinical profile, including physical metrics and cycle configs.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier of the user (matching Firebase Auth UID)"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name or pseudonym of the patient"
+        },
+        "age": {
+          "type": "integer",
+          "description": "Age of the user"
+        },
+        "height": {
+          "type": "integer",
+          "description": "Height in centimeters"
+        },
+        "weight": {
+          "type": "integer",
+          "description": "Weight in kilograms"
+        },
+        "cycleLength": {
+          "type": "integer",
+          "description": "Menstrual cycle length in days"
+        },
+        "periodDuration": {
+          "type": "integer",
+          "description": "Typical period duration in days"
+        },
+        "lastPeriodStartDate": {
+          "type": "string",
+          "format": "date",
+          "description": "Start date of the user's most recent period"
+        },
+        "preferences": {
+          "type": "object",
+          "description": "General application preferences like language, theme, layout density"
+        },
+        "healthHistory": {
+          "type": "object",
+          "description": "Chronic status, symptoms or historical PCOS records"
+        }
+      },
+      "required": ["id", "name", "age", "cycleLength", "periodDuration", "lastPeriodStartDate"]
+    },
+    "PeriodCycle": {
+      "title": "Period Cycle",
+      "description": "Menu of historical period and cycle metrics including durations.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for this specific logged cycle"
+        },
+        "userId": {
+          "type": "string",
+          "description": "UID of the owner user"
+        },
+        "startDate": {
+          "type": "string",
+          "format": "date",
+          "description": "Period start date"
+        },
+        "endDate": {
+          "type": "string",
+          "format": "date",
+          "description": "Period/bled end date"
+        },
+        "cycleLength": {
+          "type": "integer",
+          "description": "Elapsed cycle days since the prior cycle"
+        },
+        "periodDuration": {
+          "type": "integer",
+          "description": "Period duration in days"
+        }
+      },
+      "required": ["id", "userId", "startDate", "endDate", "cycleLength", "periodDuration"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Primary clinical profile collections matching authenticated user IDs."
+    },
+    "/users/{userId}/cycles/{cycleId}": {
+      "schema": "PeriodCycle",
+      "description": "Subcollection of 6 or more cycle intervals logged by this patient."
+    }
+  }
+}

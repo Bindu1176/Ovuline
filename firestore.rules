@@ -1,0 +1,97 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 1. Global Safety Net: Default Deny All
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Reuseable global helpers for security reinforcement
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // User Validator Helper
+    function isValidUser(data) {
+      return data.id is string 
+        && data.id.size() <= 128
+        && data.name is string 
+        && data.name.size() > 0 
+        && data.name.size() <= 128
+        && data.age is int 
+        && data.age >= 10 
+        && data.age <= 120
+        && data.cycleLength is int 
+        && data.cycleLength >= 20 
+        && data.cycleLength <= 100
+        && data.periodDuration is int 
+        && data.periodDuration >= 2 
+        && data.periodDuration <= 14
+        && data.lastPeriodStartDate is string 
+        && data.lastPeriodStartDate.size() <= 30;
+    }
+
+    // Period Cycle Validator Helper
+    function isValidCycle(data) {
+      return data.id is string 
+        && data.id.size() <= 128
+        && data.userId is string 
+        && data.userId.size() <= 128
+        && data.startDate is string 
+        && data.startDate.size() <= 30
+        && data.endDate is string 
+        && data.endDate.size() <= 30
+        && data.cycleLength is int
+        && data.cycleLength >= 20
+        && data.cycleLength <= 100
+        && data.periodDuration is int
+        && data.periodDuration >= 2
+        && data.periodDuration <= 14;
+    }
+
+    // 2. User Profile Rules Gate
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      
+      allow create: if isOwner(userId) 
+        && isValidId(userId)
+        && isValidUser(request.resource.data)
+        && request.resource.data.id == request.auth.uid;
+        
+      allow update: if isOwner(userId)
+        && isValidUser(request.resource.data)
+        && request.resource.data.id == existing().id
+        && (
+          // Action 1: Modifying profile statistics & symptoms
+          request.resource.data.diff(resource.data).affectedKeys().hasAny(['name', 'age', 'height', 'weight', 'cycleLength', 'periodDuration', 'lastPeriodStartDate', 'preferences', 'healthHistory'])
+        );
+        
+      allow delete: if false; // Profiles cannot be randomly purged of health info
+
+      // 3. User Period Cycles history Subcollection
+      match /cycles/{cycleId} {
+        allow list, get: if isOwner(userId);
+        
+        allow create: if isOwner(userId)
+          && isValidId(cycleId)
+          && isValidCycle(request.resource.data)
+          && request.resource.data.userId == request.auth.uid;
+          
+        allow update: if isOwner(userId)
+          && isValidCycle(request.resource.data)
+          && request.resource.data.userId == existing().userId;
+          
+        allow delete: if isOwner(userId);
+      }
+    }
+  }
+}
